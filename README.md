@@ -20,7 +20,9 @@ Processing-in-memory (PIM) architectures have been highlighted as one of the mos
 * This code is for operating the network assuming that all convolutional layer have the same parallel window size (5x5, 4x4).
 
 ### utilization_pattern_run_script.py
-* This code calculates the computing cycle according to the mapping methods (im2col, SDK, VW-SDK).
+* This code operates the pattern-based pruning methods (PatDNN, Random, PConv) with various entries.
+
+* Note that, for a fair comparison, we assumed that all pattern have the block-wise pattern dimension.
 
 
 ## Mapping methods
