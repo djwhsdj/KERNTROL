@@ -10,7 +10,17 @@ Processing-in-memory (PIM) architectures have been highlighted as one of the mos
 
 ## Usage
 
+### utils.py
+* This code includes functions of quantization, couting, mapping algorithm and KERNTROL.
 
+### utilization_run_script.py
+* This code operates a baseline and our proposed ones (KERNTROL-M, KERNTROL-C).
+
+### utilization_others_script.py
+* This code is for operating the network assuming that all convolutional layer have the same parallel window size (5x5, 4x4).
+
+### utilization_pattern_run_script.py
+* This code calculates the computing cycle according to the mapping methods (im2col, SDK, VW-SDK).
 
 
 ## Mapping methods
