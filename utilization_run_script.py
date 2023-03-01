@@ -15,6 +15,8 @@ orignal
 KERNTROL-M
 KERNTROL-C
 Pattern-base
+
+The model can be changed with 'ResNet-Q, WRN16-4'
 '''
 
 if mode == 1 : # 
