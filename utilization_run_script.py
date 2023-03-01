@@ -6,26 +6,8 @@ print('input the mode for training mode')
 mode = int(input())
 
 
-seed_candidate = [1016, 1106, 2023, 1992, 52398213, 38982158, 37988277, 72975320, 51044796, 72392303]
-# original model test
-'''
-ResNet-20
-lr 1e-1 ~ 1e-4
-512 x 512
-256 x 256
-
-WRN16-4
-lr 1e-1 ~ 1e-4
-2048 x 1024
-1024 x 1024
-'''
 
 
-#########################################
-# ResNet-20/cifar10/ab=4/wb=1/T=30/100epochs
-# WRN16-4/cifar100/ab=8/wb=2/T=60/200epochs
-
-# [52365648, 62292156, 1016]
 '''
 230216
 WRN16-4 
@@ -34,6 +16,7 @@ KERNTROL-M
 KERNTROL-C
 Pattern-base
 '''
+
 if mode == 1 : # 
     original = [2]
     epoch = [100] 
