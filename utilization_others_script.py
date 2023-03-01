@@ -20,7 +20,7 @@ wb: weight bit precision
 l_th: threshold
 ar: array row
 ac: array column
-The model can be changed with 'ResNet-20, WRN16-4'
+The model can be changed with 'ResNet-Q, WRN16-4'
 '''
 
 if mode == 1 : 
