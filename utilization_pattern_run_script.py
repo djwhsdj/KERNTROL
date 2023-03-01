@@ -6,17 +6,20 @@ print('input the mode for training mode')
 mode = int(input())
 
 
-seed_candidate = [1016, 1106, 2023, 1992, 52398213, 38982158, 37988277, 72975320, 51044796, 72392303]
-
 '''
-if args.original == 0:
-    name = 'Random' # 6 entry
+1. original == 0:
+  name = 'Random' 
 
-elif args.original == 1:
-    name = 'PatDNN'
+2. original == 1:
+  name = 'PatDNN'
 
-elif args.original == 2:
-    name = 'Pconv'
+3. original == 2:
+  name = 'Pconv'
+
+The model can be changed with 'ResNet-20, WRN16-4'
+
+entries: the number of non-zero weights. 
+If entries is 8, only 1 weight is zero.
 '''
 
 if mode == 1 : # 
