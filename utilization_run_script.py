@@ -9,13 +9,15 @@ mode = int(input())
 
 
 '''
-230216
-WRN16-4 
-orignal
-KERNTROL-M
-KERNTROL-C
-Pattern-base
-
+original = MODE
+1: Baseline
+2: KERNTROL-C
+4: KERNTROl-M
+ab: acitvation bit precision
+wb: weight bit precision
+l_th: threshold
+ar: array row
+ac: array column
 The model can be changed with 'ResNet-Q, WRN16-4'
 '''
 
