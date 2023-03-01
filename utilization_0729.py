@@ -13,10 +13,9 @@ import torch.nn.init as init
 import torchvision
 from torchvision import datasets, transforms
 # import utils
-# from utils import *
+from utils import *
 # from tqdm import tqdm
 # import pickle
-from utils_1 import *
 import logging
 import random
 # import pandas as pd
@@ -41,7 +40,7 @@ parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight dec
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--optimizer', default='SGD', type=str, help='[adam, SGD]')
 parser.add_argument('--no-cuda',    default=False, action='store_true', help='disables CUDA training')
-parser.add_argument('--u_th',    default=0.5, type=float, help='upper threshold of row utilization') # 0.25, 0.3, 0.4
+parser.add_argument('--u_th',    default=0, type=float, help='upper threshold of row utilization') # 0.25, 0.3, 0.4
 parser.add_argument('--l5_th',    default=0.25, type=float, help='lower threshold of row utilization') # 0.25, 0.3, 0.4
 parser.add_argument('--l4_th',    default=0.25, type=float, help='lower threshold of row utilization') # 0.25, 0.3, 0.4
 parser.add_argument('--GPU', type=int, default=2) 
@@ -166,7 +165,7 @@ class Wide_BasicBlock_Q(nn.Module):
                     if pw == 5 :
                         mask = pattern_gen(pw, kernel, args.l5_th)
                     else :
-                        mask = pattern_gen(pw, kernel, args.l4_th)
+                        mask = pattern_gen(pw, kernel, args.l5_th)
                     W = pw - kernel 
                     MK = kernel + 2*1*W # 1 is stride
                     logger.info(mask)
@@ -201,7 +200,7 @@ class Wide_BasicBlock_Q(nn.Module):
                             self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw5, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                             # self.conv2 = SwitchedConv2d_update_sdk(self.w_bit, planes, planes, pat=pat_ours, pw=pw, kernel_size=MK, padding=padding, stride=st, bias=False)
                         elif pw == 4:
-                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
+                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                             # self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                     else :
                         self.conv2 = Conv2d_Q_(self.w_bit, planes, planes, kernel_size=kernel, padding=padding, stride=1, bias=False) 
@@ -247,7 +246,7 @@ class Wide_BasicBlock_Q(nn.Module):
                     if pw == 5 :
                         mask = pattern_gen(pw, kernel, args.l5_th)
                     else :
-                        mask = pattern_gen(pw, kernel, args.l4_th)
+                        mask = pattern_gen(pw, kernel, args.l5_th)
                     # mask = pattern_gen(pw, kernel, args.l_th)
                     # mask = pattern_gen(pw, kernel, uth)
                     logger.info(mask)
@@ -283,8 +282,8 @@ class Wide_BasicBlock_Q(nn.Module):
                             # self.conv1 = SwitchedConv2d_update_sdk(self.w_bit, planes, planes, pat=pat_ours, pw=pw, kernel_size=MK, padding=padding, stride=st, bias=False)
                             # self.conv2 = SwitchedConv2d_update_sdk(self.w_bit, planes, planes, pat=pat_ours, pw=pw, kernel_size=MK, padding=padding, stride=st, bias=False)
                         elif pw == 4:
-                            self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
-                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
+                            self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
+                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                             # self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                             # self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                     else :
@@ -386,14 +385,14 @@ elif args.original == 4:
 
 
 
-directory = './log/%s/%s/%s/%s/%d/%s/%.2f/%.4f'%(args.model, args.dataset, name, args.seed, args.epoch, args.mode, args.u_th, args.lr)
+directory = './log/%s/%s/%s/%d/%s'%(args.model, args.dataset, name, args.seed, args.epoch)
 if not os.path.isdir(directory):
     os.makedirs(directory)
-file_name = directory + '/wb%d_ab%d_l5th%.2f_l4th%.2f_ar%dxac%d.log'%(args.wb, args.ab, args.l5_th, args.l4_th, args.ar, args.ac)
+file_name = directory + '/wb%d_ab%d_l5th%.2f_ar%dxac%d.log'%(args.wb, args.ab, args.l5_th, args.ar, args.ac)
 
 
 if args.save == 1:
-    directory_save = './save/%s/%s/%s/%s/%d/%s'%(args.model, args.dataset, name, args.seed, args.epoch, args.mode)
+    directory_save = './save/%s/%s/%s/%d/%d'%(args.model, args.dataset, name, args.seed, args.epoch)
     if not os.path.isdir(directory_save):
         os.makedirs(directory_save)
 
@@ -402,7 +401,7 @@ file_handler = logging.FileHandler(file_name)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-args.workers = 1
+args.workers = 2
 
 use_cuda = not args.no_cuda and torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -474,7 +473,7 @@ class BasicBlock_Q(nn.Module):
                     if pw == 5 :
                         mask = pattern_gen(pw, kernel, args.l5_th)
                     else :
-                        mask = pattern_gen(pw, kernel, args.l4_th)
+                        mask = pattern_gen(pw, kernel, args.l5_th)
                     logger.info(mask)
                     if args.original == 2:
                         pat_ours_pw5 = pattern_gen_v1(MK, pw, kernel, args.l5_th, 0, planes, planes, mode='same')
@@ -493,7 +492,7 @@ class BasicBlock_Q(nn.Module):
                         if pw == 5:
                             self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw5, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                         elif pw == 4:
-                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
+                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                     else :
                         self.conv2 = Conv2d_Q_(self.w_bit, planes, planes, kernel_size=kernel, padding=padding, stride=1, bias=False) 
 
@@ -520,7 +519,7 @@ class BasicBlock_Q(nn.Module):
                     if pw == 5 :
                         mask = pattern_gen(pw, kernel, args.l5_th)
                     else :
-                        mask = pattern_gen(pw, kernel, args.l4_th)
+                        mask = pattern_gen(pw, kernel, args.l5_th)
                     # mask = pattern_gen(pw, kernel, args.l_th)
                     # mask = pattern_gen(pw, kernel, uth)
                     logger.info(mask)
@@ -543,8 +542,8 @@ class BasicBlock_Q(nn.Module):
                             self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw5, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                             self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw5, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                         elif pw == 4:
-                            self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
-                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
+                            self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
+                            self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                     else :
                         self.conv1 = Conv2d_Q_(self.w_bit, planes, planes, kernel_size=kernel, padding=padding, stride=1, bias=False) 
                         self.conv2 = Conv2d_Q_(self.w_bit, planes, planes, kernel_size=kernel, padding=padding, stride=1, bias=False) 
@@ -652,7 +651,7 @@ def train_model(model, train_loader, test_loader):
     if args.dataset == 'cifar10' :
         T = 30
     elif args.dataset =='cifar100':
-        T = 50
+        T = 60
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T, 1e-4)
@@ -660,24 +659,11 @@ def train_model(model, train_loader, test_loader):
 
     print(f'TRAINING START!')
     for epoch in range(args.epoch):
+        # start = time.time()
         model.train()
         cnt = 0
         loss_sum = 0
 
-        '''
-        Scheduler를 사용하지 않는 경우 적용
-
-        if args.optimizer == 'adam' :
-            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-        elif args.optimizer == 'prune' : # patdnn에서 사용한 optimizer
-            optimizer = PruneAdam(model.named_parameters(), lr=args.lr) 
-        elif args.optimizer == 'SGD' :
-            if args.dataset == 'svhn' :
-                optimizer = optim.SGD(model.parameters(), lr=cf_learning_rate_svhn(args.lr, epoch), momentum=0.9, weight_decay=args.weight_decay)
-            else:
-                # optimizer = optim.SGD(model.parameters(), lr=cf_learning_rate(args.lr, epoch), momentum=0.9, weight_decay=args.weight_decay)
-                 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-        '''
 
 
         for i, (img, target) in enumerate(train_loader):
@@ -695,6 +681,9 @@ def train_model(model, train_loader, test_loader):
         loss_sum = loss_sum / cnt
         model.eval()
         acc = eval(model, test_loader)
+        # end = time.time()
+        # print(f"{end - start:.5f} sec")
+
         # print(model.layers)
         if epoch % 20 == 0:
             logger.info("*"*100)
@@ -749,7 +738,7 @@ def train_model(model, train_loader, test_loader):
                     if args.original == 1:
                         torch.save(model.state_dict(), directory_save + '/lr%.4f_wb%d_ab%d_.pt'%(args.lr, args.wb, args.ab))
                     else :
-                        torch.save(model.state_dict(), directory_save + '/lr%.4f_wb%d_ab%d_lth%.2f_uth%.2f_ar%dxac%d.pt'%(args.lr, args.wb, args.ab, args.l_th, args.u_th, args.ar, args.ac))
+                        torch.save(model.state_dict(), directory_save + '/lr%.4f_wb%d_ab%d_lth%.2f_ar%dxac%d.pt'%(args.lr, args.wb, args.ab, args.l5_th, args.ar, args.ac))
 
     logger.info('Final best accuracy is : %.4f '%(best_acc))
 
