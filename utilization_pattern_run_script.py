@@ -16,7 +16,7 @@ mode = int(input())
 3. original == 2:
   name = 'Pconv'
 
-The model can be changed with 'ResNet-20, WRN16-4'
+The model can be changed with 'ResNet-Q, WRN16-4'
 
 entries: the number of non-zero weights. 
 If entries is 8, only 1 weight is zero.
