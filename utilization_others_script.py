@@ -10,16 +10,18 @@ seed_candidate = [1016, 1106, 2023, 1992, 52398213, 38982158, 37988277, 72975320
 
 
 '''
-original
-0: pairs all layer
+original = MODE
 1: 5x5 pw all kerntrol -c
 2: 4x4 pw all kerntrol -c
 3: 5x5 pw all kerntrol
 4: 4x4 pw all kerntrol
-
+ab: acitvation bit precision
+wb: weight bit precision
+l_th: threshold
+ar: array row
+ac: array column
 '''
 
-# 모든 case에 대해 inpu padding
 if mode == 1 : 
     original = [1] 
     optimizer = 'SGD' 
