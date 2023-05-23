@@ -22,7 +22,7 @@ Processing-in-memory (PIM) architectures have been highlighted as one of the mos
 ### utilization_pattern_run_script.py
 * This code operates the pattern-based pruning methods (PatDNN, Random, PConv) with various entries.
 
-* Note that, for a fair comparison, we assumed that all pattern have the block-wise pattern dimension.
+* Note that, for a fair comparison, we assumed that all pattern have the row-wise pattern dimension.
 
 
 ## Mapping methods
