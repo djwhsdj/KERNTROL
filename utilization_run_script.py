@@ -11,8 +11,7 @@ mode = int(input())
 '''
 original = MODE
 1: Baseline
-2: KERNTROL-C
-4: KERNTROl-M
+2: KERNTROL
 ab: acitvation bit precision
 wb: weight bit precision
 l_th: threshold
