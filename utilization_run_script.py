@@ -10,8 +10,7 @@ mode = int(input())
 
 '''
 original = MODE
-1: Baseline
-2: KERNTROL
+1: Baseline, 4: KERNTROL
 ab: acitvation bit precision
 wb: weight bit precision
 l_th: threshold
@@ -63,7 +62,7 @@ elif mode == 3 : #
     ar = [2048]
     ac = 1024
     save = 0
-'''
+
 elif mode == 4 : # 
     original = [1]
     epoch = [100] 
@@ -78,7 +77,7 @@ elif mode == 4 : #
     ar = [2048]
     ac = 1024
     save = 1
-'''
+
 #########################################
 
 
