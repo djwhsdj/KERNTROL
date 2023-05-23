@@ -82,7 +82,7 @@ print ('Current cuda device ', device)
 # print ('Current cuda device ', device)
 
 # ranint = random.randint(0, 10000000)
-## seed 1992일 때, 우리의 방법이 제일 좋음
+
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
