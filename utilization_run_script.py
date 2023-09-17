@@ -28,7 +28,7 @@ if mode == 1 : #
     model = 'ResNet_Q'
     dataset = ['cifar10']
     GPU = 3
-    l5_th = [0.15, 0.25, 0.4, 0.45]
+    l5_th = [0.15, 0.25, 0.4, 0.45] # in this cases, l4_th = l5_th
     # l4_th = [0]
     ar = [512]
     ac = 256
