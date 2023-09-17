@@ -320,7 +320,7 @@ wfx.weight.data = wfx.weight * mask_use
 # Option 2: convert result to nn.Parameter and write to weight
 wfx.weight = nn.Parameter(wfx.weight * mask_use)
 '''
-def pattern_gen_v1(MK, pw, k, lo_thresh, up_thresh, in_planes, planes, mode='bound'):
+def pattern_gen_v1(MK, pw, k, lo_thresh, up_thresh, in_planes, planes, mode='same'):
 
     idx = 0
     mask = torch.zeros(pw, pw, dtype=torch.double)
@@ -333,16 +333,8 @@ def pattern_gen_v1(MK, pw, k, lo_thresh, up_thresh, in_planes, planes, mode='bou
     mask = torch.where(mask <= lo_thresh, 0., mask)
     mask_bound = torch.where(mask <= lo_thresh, 0., 1.).type(torch.int)
 
-    if mode == 'bound':
-        mask = torch.where(mask >= up_thresh, 1., mask)
-        pat = torch.where(mask <1, 0., mask)
-    elif mode == 'inter':
-        mask1 = torch.where(mask <= up_thresh, 1., mask)
-        mask2 = torch.where(mask > lo_thresh, 1., mask)
-        mask = mask1 * mask2
-        pat = torch.where(mask <1, 0., mask)
     
-    elif mode == 'same':
+    if mode == 'same':
         mask = mask
         pat = torch.where(mask>0, 1., 0.)
 
@@ -364,19 +356,7 @@ def pattern_gen_v1(MK, pw, k, lo_thresh, up_thresh, in_planes, planes, mode='bou
     a = torch.Tensor([])
     for idx_height in range(pw-k+1) : # height 
         for idx_width in range(pw-k+1) : # width
-            if mode == 'inter':
-                b = kern[st-idx_height:st-idx_height+pw, st-idx_width:st-idx_width+pw] + pat
-                b = torch.where(b > 1., 1., b)
-                b = b * mask_bound
-                b = torch.where(b >= 1., 1., 0.)
-            
-            elif mode == 'bound':
-                b = kern[st-idx_height:st-idx_height+pw, st-idx_width:st-idx_width+pw] + pat
-                b = b * mask_bound
-                b = torch.floor(b).type(torch.int)
-                b = torch.where(b >= 1, 1, 0)
-
-            elif mode == 'same':
+            if mode == 'same':
                 b = pat
 
             b =  b.type(torch.float)
@@ -388,7 +368,7 @@ def pattern_gen_v1(MK, pw, k, lo_thresh, up_thresh, in_planes, planes, mode='bou
 
 
 
-def pattern_gen_v2(MK, pw, k, pat, planes, mode='bound'):
+def pattern_gen_v2(MK, pw, k, pat, planes, mode='same'):
 
     kern = torch.ones(k, k)
 
@@ -405,10 +385,7 @@ def pattern_gen_v2(MK, pw, k, pat, planes, mode='bound'):
     a = torch.Tensor([])
     for idx_height in range(pw-k+1) : # height 
         for idx_width in range(pw-k+1) : # width
-            if mode == 'bound':
-              b = mask[st-idx_height:st-idx_height+pw, st-idx_width:st-idx_width+pw] + pat
-              b = torch.where(b >= 1, 1, b)
-            elif mode == 'inter' or mode == 'same':
+            if mode == 'same':
               b = pat
               
             x = torch.tile(b, (planes, planes, 1, 1)).cuda()
