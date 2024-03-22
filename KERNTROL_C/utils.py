@@ -320,6 +320,22 @@ wfx.weight.data = wfx.weight * mask_use
 # Option 2: convert result to nn.Parameter and write to weight
 wfx.weight = nn.Parameter(wfx.weight * mask_use)
 '''
+
+def pattern_gen(pw, k, thresh):
+
+    idx = 0
+    mask = torch.zeros(pw, pw).cuda()
+    for i in range(pw-k+1) : # col 
+        for j in range(pw-k+1) : # row
+            idx += 1
+            mask[i:i+k, j:j+k]+=1
+    
+    mask = mask/idx
+    mask = torch.where(mask <= thresh, 0, 1)
+
+    return mask
+
+
 def pattern_gen_v1(MK, pw, k, lo_thresh, up_thresh, in_planes, planes, mode='bound'):
 
     idx = 0
