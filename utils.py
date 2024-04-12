@@ -435,39 +435,6 @@ def pattern_gen_sdk(MK, pw, k, pat, in_planes, planes):
     return torch.stack(list1, dim=0)
 
 
-class Conv2d_Q_ours(Conv2d_Q): ## ours
-    def __init__(self, w_bit, in_channels, out_channels, kernel_size, stride=1, padding=1, dilation=1, groups=1,
-                    bias=False):
-        super(Conv2d_Q_ours, self).__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias)
-        self.w_bit = w_bit
-        self.quantize_fn = weight_quantize_fn(self.w_bit)
-    
-    def forward(self, input, idx, pw, pat):
-        # weight_q = self.quantize_fn(self.weight)
-
-
-        windows = int(pw) - 3 + 1 # 3 is kernel size
-        pw = int(pw)
-        height = int(idx // windows) # 3 is kernel size
-        width = int(idx % windows) # 3 is kernel size
-        st = pw-3 # 3 is kernel size
-        ad_weight = self.weight[:,:,st-height:st-height+pw, st-width:st-width+pw] * pat
-        weight_q = self.quantize_fn(ad_weight) * pat
-
-        # if pw == 5 :
-        #     print(self.weight[:,:,st-height:st-height+pw, st-width:st-width+pw][0][0])
-        #     print('*'*100)
-        #     print(ad_weight[0][0])
-        #     print('*'*100)
-        #     # print(pat[0][0])
-        #     # print('*'*100)
-        #     print(weight_q[0][0])
-        # if pw == 5 :
-        #     print(weight_q[:,:,st-height:st-height+pw, st-width:st-width+pw]*pat)
-        
-        # return F.conv2d(input, weight_q[:,:,st-height:st-height+pw, st-width:st-width+pw]*pat, self.bias, self.stride, self.padding, self.dilation, self.groups)
-        return F.conv2d(input, weight_q, self.bias, self.stride, self.padding, self.dilation, self.groups)
-    
 
 
 def idx_gen(pw, k):
@@ -486,10 +453,7 @@ def slicing_conv(idx, windows, pw, weight, pat) :
     width = int(idx % windows) # 나머지
 
     slicing = pw-3
-    # print(pat.shape)
-    # print(weight[:,:,slicing-height:slicing-height+pw, slicing-width:slicing-width+pw].shape)
     ad_weight = weight[:,:,slicing-height:slicing-height+pw, slicing-width:slicing-width+pw] * pat
-    # print(ad_weight)
 
 
     return ad_weight
@@ -541,32 +505,15 @@ class SwitchedConv2d_update_ours(Conv2d_Q_) :
             mask1_out2 = F.conv2d(input, ad_weight2, self.bias, self.stride, self.padding, self.dilation, self.groups)
 
 
-            # out1 = torch.tensor([]).cuda()
-         
-            # for t in range(mask1_out1.shape[3]): # width
-            #     out1 = torch.cat([out1, mask1_out1[:,:,:,t:t+1]], dim=3)
-            #     out1 = torch.cat([out1, mask1_out2[:,:,:,t:t+1]], dim=3)
-
             ad_weight3 = slicing_conv(2, windows, self.pw, weight_q, self.pat[2])
             mask1_out3 = F.conv2d(input, ad_weight3, self.bias, self.stride, self.padding, self.dilation, self.groups)
 
             ad_weight4 = slicing_conv(3, windows, self.pw, weight_q, self.pat[3])
             mask1_out4 = F.conv2d(input, ad_weight4, self.bias, self.stride, self.padding, self.dilation, self.groups)
             
-            # out2 = torch.tensor([]).cuda()
-            # for i in range(mask1_out1.shape[3]): # width
-            #     out2 = torch.cat([out2, mask1_out3[:,:,:,i:i+1]], dim=3)
-            #     out2 = torch.cat([out2, mask1_out4[:,:,:,i:i+1]], dim=3)
-
-            # a = torch.tensor([]).cuda()
-            # for j in range(out1.shape[2]):
-            #     a = torch.cat([a, out1[:,:,j:j+1,:]], dim=2)
-            #     a = torch.cat([a, out2[:,:,j:j+1,:]], dim=2)
-
-            # a = torch.stack([torch.stack([mask1_out1, mask1_out3], dim=-1), torch.stack([mask1_out2, mask1_out4], dim=-1)], dim=-1).permute(0,1,2,4,3,5).reshape(-1, s[1], s[2], s[3])
             a = torch.stack([mask1_out1, mask1_out2, mask1_out3, mask1_out4], dim=-1).reshape(-1,s[1],s[2]//2,s[2]//2,2,2).permute(0,1,2,4,3,5).reshape(-1, s[1], s[2], s[3])
-            # end = time.time()
-            # print(f"{end - start:.5f} sec")
+
+            
             return a 
 
         elif nofwindows == 9 :
@@ -577,11 +524,6 @@ class SwitchedConv2d_update_ours(Conv2d_Q_) :
             ad_weight3 = slicing_conv(2, windows, self.pw, weight_q, self.pat[2])
             mask1_out3 = F.conv2d(input, ad_weight3, self.bias, self.stride, 1, self.dilation, self.groups)
 
-            # out1 = torch.tensor([]).cuda()
-            # for t in range(mask1_out1.shape[3]): # width
-            #     out1 = torch.cat([out1, mask1_out1[:,:,:,t:t+1]], dim=3)
-            #     out1 = torch.cat([out1, mask1_out2[:,:,:,t:t+1]], dim=3)
-            #     out1 = torch.cat([out1, mask1_out3[:,:,:,t:t+1]], dim=3)
             ad_weight4 = slicing_conv(3, windows, self.pw, weight_q, self.pat[3])
             mask1_out4 = F.conv2d(input, ad_weight4, self.bias, self.stride, 1, self.dilation, self.groups)
 
@@ -590,12 +532,6 @@ class SwitchedConv2d_update_ours(Conv2d_Q_) :
 
             ad_weight6 = slicing_conv(5, windows, self.pw, weight_q, self.pat[5])
             mask1_out6 = F.conv2d(input, ad_weight6, self.bias, self.stride, 1, self.dilation, self.groups)
-            
-            # out2 = torch.tensor([]).cuda()
-            # for i in range(mask1_out1.shape[3]): # width
-            #     out2 = torch.cat([out2, mask1_out4[:,:,:,i:i+1]], dim=3)
-            #     out2 = torch.cat([out2, mask1_out5[:,:,:,i:i+1]], dim=3)
-            #     out2 = torch.cat([out2, mask1_out6[:,:,:,i:i+1]], dim=3)
 
             ad_weight7 = slicing_conv(6, windows, self.pw, weight_q, self.pat[6])
             mask1_out7 = F.conv2d(input, ad_weight7, self.bias, self.stride, 1, self.dilation, self.groups)
@@ -606,36 +542,16 @@ class SwitchedConv2d_update_ours(Conv2d_Q_) :
             ad_weight9 = slicing_conv(8, windows, self.pw, weight_q, self.pat[8])
             mask1_out9 = F.conv2d(input, ad_weight9, self.bias, self.stride, 1, self.dilation, self.groups)
             
-            # out3 = torch.tensor([]).cuda()
-            # for p in range(mask1_out1.shape[3]): # width
-            #     out3 = torch.cat([out3, mask1_out7[:,:,:,p:p+1]], dim=3)
-            #     out3 = torch.cat([out3, mask1_out8[:,:,:,p:p+1]], dim=3)
-            #     out3 = torch.cat([out3, mask1_out9[:,:,:,p:p+1]], dim=3)
 
-            # a = torch.tensor([]).cuda()
-            # for j in range(out1.shape[2]):
-            #     a = torch.cat([a, out1[:,:,j:j+1,:]], dim=2)
-            #     a = torch.cat([a, out2[:,:,j:j+1,:]], dim=2)
-            #     a = torch.cat([a, out3[:,:,j:j+1,:]], dim=2)
             a = torch.stack([mask1_out1, mask1_out2, mask1_out3, mask1_out4, mask1_out5, mask1_out6, mask1_out7, mask1_out8, mask1_out9], dim=-1).reshape(-1, s[1], mask1_out1.size(2), mask1_out1.size(3), 3, 3).permute(0,1,2,4,3,5).reshape(-1, s[1], mask1_out1.size(2)*3, mask1_out1.size(3)*3)
 
             if a.shape[3] == 33 :
-                # p1d = (1, 1, 1, 1)
-                # a = F.pad(a, p1d, "constant", 0) # effectively zero padding, 
                 a = a[:,:,:32,:32]
-            elif a.shape[3] == 18 :
-                # p2d = (0, 1, 0, 1)
-                # print(a.shape)
-                # a = F.pad(a, p2d, "constant", 0) # effectively zero padding, 
+            elif a.shape[3] == 18 : 
                 a = a[:,:,:16,:16]
-                # print(a.shape)
             elif a.shape[3] == 9:
-                # p1d = (1, 1, 1, 1)
-                # a = F.pad(a, p1d, "constant", 0) # effectively zero padding, 
                 a = a = a[:,:,:8,:8]
 
-            # end = time.time()
-            # print(f"{end - start:.5f} sec")
 
             return a
 
@@ -682,10 +598,6 @@ class SwitchedConv2d_update_sdk(Conv2d_Q_) :
             mask1_out2 = F.conv2d(input, ad_weight2, self.bias, self.stride, self.padding, self.dilation, self.groups)
 
 
-            # out1 = torch.tensor([]).cuda()
-            # for t in range(mask1_out1.shape[3]): # width
-            #     out1 = torch.cat([out1, mask1_out1[:,:,:,t:t+1]], dim=3)
-            #     out1 = torch.cat([out1, mask1_out2[:,:,:,t:t+1]], dim=3)
 
             ad_weight3 = slicing_conv(2, windows, self.pw, weight_q, self.pat[2])
             mask1_out3 = F.conv2d(input, ad_weight3, self.bias, self.stride, self.padding, self.dilation, self.groups)
@@ -693,15 +605,6 @@ class SwitchedConv2d_update_sdk(Conv2d_Q_) :
             ad_weight4 = slicing_conv(3, windows, self.pw, weight_q, self.pat[3])
             mask1_out4 = F.conv2d(input, ad_weight4, self.bias, self.stride, self.padding, self.dilation, self.groups)
             
-            # out2 = torch.tensor([]).cuda()
-            # for i in range(mask1_out1.shape[3]): # width
-            #     out2 = torch.cat([out2, mask1_out3[:,:,:,i:i+1]], dim=3)
-            #     out2 = torch.cat([out2, mask1_out4[:,:,:,i:i+1]], dim=3)
-
-            # a = torch.tensor([]).cuda()
-            # for j in range(out1.shape[2]):
-            #     a = torch.cat([a, out1[:,:,j:j+1,:]], dim=2)
-            #     a = torch.cat([a, out2[:,:,j:j+1,:]], dim=2)
             a = torch.stack([mask1_out1, mask1_out2, mask1_out3, mask1_out4], dim=-1).reshape(-1,s[1],s[2]//2,s[2]//2,2,2).permute(0,1,2,4,3,5).reshape(-1, s[1], s[2], s[3])
 
 
@@ -717,12 +620,6 @@ class SwitchedConv2d_update_sdk(Conv2d_Q_) :
             ad_weight3 = slicing_conv(2, windows, self.pw, weight_q, self.pat[2])
             mask1_out3 = F.conv2d(input, ad_weight3, self.bias, 3, 1, self.dilation, self.groups)
 
-            # out1 = torch.tensor([]).cuda()
-            # for t in range(mask1_out1.shape[3]): # width
-            #     out1 = torch.cat([out1, mask1_out1[:,:,:,t:t+1]], dim=3)
-            #     out1 = torch.cat([out1, mask1_out2[:,:,:,t:t+1]], dim=3)
-            #     out1 = torch.cat([out1, mask1_out3[:,:,:,t:t+1]], dim=3)
-
             ad_weight4 = slicing_conv(3, windows, self.pw, weight_q, self.pat[3])
             mask1_out4 = F.conv2d(input, ad_weight4, self.bias, 3, 1, self.dilation, self.groups)
 
@@ -732,12 +629,6 @@ class SwitchedConv2d_update_sdk(Conv2d_Q_) :
             ad_weight6 = slicing_conv(5, windows, self.pw, weight_q, self.pat[5])
             mask1_out6 = F.conv2d(input, ad_weight6, self.bias, 3, 1, self.dilation, self.groups)
             
-            # out2 = torch.tensor([]).cuda()
-            # for i in range(mask1_out1.shape[3]): # width
-            #     out2 = torch.cat([out2, mask1_out4[:,:,:,i:i+1]], dim=3)
-            #     out2 = torch.cat([out2, mask1_out5[:,:,:,i:i+1]], dim=3)
-            #     out2 = torch.cat([out2, mask1_out6[:,:,:,i:i+1]], dim=3)
-
             ad_weight7 = slicing_conv(6, windows, self.pw, weight_q, self.pat[6])
             mask1_out7 = F.conv2d(input, ad_weight7, self.bias, 3, 1, self.dilation, self.groups)
 
@@ -746,38 +637,17 @@ class SwitchedConv2d_update_sdk(Conv2d_Q_) :
 
             ad_weight9 = slicing_conv(8, windows, self.pw, weight_q, self.pat[8])
             mask1_out9 = F.conv2d(input, ad_weight9, self.bias, 3, 1, self.dilation, self.groups)
-            # print(mask1_out9) 
-            
-            # out3 = torch.tensor([]).cuda()
-            # for p in range(mask1_out1.shape[3]): # width
-            #     out3 = torch.cat([out3, mask1_out7[:,:,:,p:p+1]], dim=3)
-            #     out3 = torch.cat([out3, mask1_out8[:,:,:,p:p+1]], dim=3)
-            #     out3 = torch.cat([out3, mask1_out9[:,:,:,p:p+1]], dim=3)
 
-            # a = torch.tensor([]).cuda()
-            # for j in range(out1.shape[2]):
-            #     a = torch.cat([a, out1[:,:,j:j+1,:]], dim=2)
-            #     a = torch.cat([a, out2[:,:,j:j+1,:]], dim=2)
-            #     a = torch.cat([a, out3[:,:,j:j+1,:]], dim=2)
 
             a = torch.stack([mask1_out1, mask1_out2, mask1_out3, mask1_out4, mask1_out5, mask1_out6, mask1_out7, mask1_out8, mask1_out9], dim=-1).reshape(-1, s[1], mask1_out1.size(2), mask1_out1.size(3), 3, 3).permute(0,1,2,4,3,5).reshape(-1, s[1], mask1_out1.size(2)*3, mask1_out1.size(3)*3)
 
             if a.shape[3] == 33 :
-                # p1d = (1, 1, 1, 1)
-                # a = F.pad(a, p1d, "constant", 0) # effectively zero padding, 
                 a = a[:,:,:32,:32]
             elif a.shape[3] == 18 :
-                # p2d = (0, 1, 0, 1)
-                # print(a.shape)
-                # a = F.pad(a, p2d, "constant", 0) # effectively zero padding, 
                 a = a[:,:,:16,:16]
-                # print(a.shape)
             elif a.shape[3] == 9:
-                # p1d = (1, 1, 1, 1)
-                # a = F.pad(a, p1d, "constant", 0) # effectively zero padding, 
                 a = a = a[:,:,:8,:8]
 
-            # a = torch.stack([mask1_out1, mask1_out2, mask1_out3, mask1_out4, mask1_out5, mask1_out6, mask1_out7, mask1_out8, mask1_out9], dim=-1).reshape(-1, s[1], s[2]//3, s[2]//3, 3, 3).permute(0,1,2,4,3,5).reshape(-1, s[1], s[2], s[3])
 
             return a
 
