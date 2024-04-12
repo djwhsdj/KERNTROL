@@ -57,20 +57,9 @@ args = parser.parse_args()
 print(args)
 
 GPU_NUM = args.GPU # GPU
-# device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
-# torch.cuda.set_device(device) # change allocation of current GPU
-# print ('Current cuda device ', torch.cuda.current_device()) # check
 m_bit = args.wb
 real_ac = int(args.ac/args.wb * m_bit)
 
-
-# os.environ["CUDA_VISIBLE_DEVICES"]= str(GPU_NUM)  # Set the GPU 2 to use
-# if args.GPU == 0 :  
-#     os.environ['CUDA_VISIBLE_DEVICES']='MIG-ffeb7d21-314a-5375-9837-8d1bb9f18872'
-# elif args.GPU == 1:
-#     os.environ['CUDA_VISIBLE_DEVICES']='MIG-d064e803-fa01-50f8-b10a-bcda0f02b03c'
-# elif args.GPU == 2:
-#     os.environ['CUDA_VISIBLE_DEVICES']='MIG-ae73c3ad-1cef-56bd-ab31-3bf18c0f8e62'
 
     
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  # Arrange GPU devices starting from 0
@@ -78,10 +67,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]= str(GPU_NUM)  # Set the GPU 2 to use
 device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
 print ('Current cuda device ', device)
 
-# device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
-# print ('Current cuda device ', device)
 
-# ranint = random.randint(0, 10000000)
 
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
@@ -141,23 +127,10 @@ class Wide_BasicBlock_Q(nn.Module):
                 self.bn1 = SwitchBatchNorm2d(self.w_bit, in_planes)
 
                 pw = int(SDK(image_col, image_row, 3, 3, planes, planes, args.ar, args.ac))
-                # if pw == 5:
-                #     uth = 0.15
-                # else:
-                #     uth = 0.25
 
                 logger.info("planes = %d, planes = %d , pw = %d"%(planes, planes, pw))
 
 
-                # ### weight mask 만드는 함수
-                # windows = pw - kernel + 1
-                # weight_mask = torch.zeros(MK, MK).cuda()
-                # for i in range(0, windows) :
-                #     for j in range(0, windows) :
-                #         weight_mask[i:i+pw, j:j+pw] = weight_mask[i:i+pw, j:j+pw] + mask
-
-                # weight_mask = torch.where(weight_mask>=1, 1, 0)
-                # ####
 
                 if pw == kernel : 
                     MK = None
@@ -216,24 +189,8 @@ class Wide_BasicBlock_Q(nn.Module):
             else: 
                 self.bn1 = SwitchBatchNorm2d(self.w_bit, in_planes)
                 self.bn2 = SwitchBatchNorm2d(self.w_bit, planes)
-                # self.bn1 = nn.BatchNorm2d(in_planes)
 
                 pw = int(SDK(image_col, image_row, 3, 3, planes, planes, args.ar, args.ac))
-                # pw = int(args.u_th) # 임시로 셋팅
-                # if pw == 5:
-                #     uth = 0.15
-                # else:
-                #     uth = 0.25
-
-                ### weight mask 만드는 함수
-                # windows = pw - kernel + 1
-                # weight_mask = torch.zeros(MK, MK).cuda()
-                # for i in range(0, windows) :
-                #     for j in range(0, windows) :
-                #         weight_mask[i:i+pw, j:j+pw] = weight_mask[i:i+pw, j:j+pw] + mask
-
-                # weight_mask = torch.where(weight_mask>=1, 1, 0)
-                # ####
 
 
 
@@ -247,8 +204,6 @@ class Wide_BasicBlock_Q(nn.Module):
                         mask = pattern_gen(pw, kernel, args.l5_th)
                     else :
                         mask = pattern_gen(pw, kernel, args.l5_th)
-                    # mask = pattern_gen(pw, kernel, args.l_th)
-                    # mask = pattern_gen(pw, kernel, uth)
                     logger.info(mask)
                     
                     if args.original == 2:
@@ -279,13 +234,9 @@ class Wide_BasicBlock_Q(nn.Module):
                         if pw == 5 :
                             self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw5, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                             self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw5, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
-                            # self.conv1 = SwitchedConv2d_update_sdk(self.w_bit, planes, planes, pat=pat_ours, pw=pw, kernel_size=MK, padding=padding, stride=st, bias=False)
-                            # self.conv2 = SwitchedConv2d_update_sdk(self.w_bit, planes, planes, pat=pat_ours, pw=pw, kernel_size=MK, padding=padding, stride=st, bias=False)
                         elif pw == 4:
                             self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                             self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours_pw4, pw=pw, lth=args.l5_th, kernel_size=MK, padding=padding, stride=st, bias=False)
-                            # self.conv1 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
-                            # self.conv2 = SwitchedConv2d_update_ours(self.w_bit, planes, planes, pat=pat_ours, pw=pw, lth=args.l4_th, kernel_size=MK, padding=padding, stride=st, bias=False)
                     else :
                         self.conv1 = Conv2d_Q_(self.w_bit, planes, planes, kernel_size=kernel, padding=padding, stride=1, bias=False) 
                         self.conv2 = Conv2d_Q_(self.w_bit, planes, planes, kernel_size=kernel, padding=padding, stride=1, bias=False) 
@@ -343,9 +294,6 @@ class Wide_ResNet_Q(nn.Module):
         strides = [stride] + [1]*(num_blocks-1)
         layers = []
         for stride in strides:
-            # Full precision
-            # option is 'A': Use F.pad
-            # option is 'B': Use Conv+BN
             layers.append(block(self.a_bit, self.w_bit, self.in_planes, planes, stride))
             self.in_planes = planes
         return nn.Sequential(*layers)
@@ -432,8 +380,6 @@ class BasicBlock_Q(nn.Module):
         self.a_bit = a_bit
         self.act1 = Activate(self.a_bit)
         self.act2 = Activate(self.a_bit)
-        # self.act1 = nn.ReLU()
-        # self.act2 = nn.ReLU()
 
         global image_col, image_row
         # if args.dataset == 'ResNet_Q':
@@ -520,8 +466,7 @@ class BasicBlock_Q(nn.Module):
                         mask = pattern_gen(pw, kernel, args.l5_th)
                     else :
                         mask = pattern_gen(pw, kernel, args.l5_th)
-                    # mask = pattern_gen(pw, kernel, args.l_th)
-                    # mask = pattern_gen(pw, kernel, uth)
+
                     logger.info(mask)
                     if args.original == 2:
                         pat_ours_pw5 = pattern_gen_v1(MK, pw, kernel, args.l5_th, args.u_th, planes, planes, mode=args.mode)
@@ -677,38 +622,10 @@ def train_model(model, train_loader, test_loader):
             loss_sum += loss.item()
         
         
-        # scheduler.step()
         loss_sum = loss_sum / cnt
         model.eval()
         acc = eval(model, test_loader)
-        # end = time.time()
-        # print(f"{end - start:.5f} sec")
 
-        # print(model.layers)
-        if epoch % 20 == 0:
-            logger.info("*"*100)
-            logger.info("Epoch %d/%d"%(epoch, args.epoch))
-            logger.info("Layer 1 Weight")
-            # logger.info(model.layers[4].conv1.weight[0][0])
-            logger.info(torch.sum(model.layers[4].conv1.weight, dim=[0,1]))
-            logger.info("Layer 1 Gradient")
-            # logger.info(model.layers[4].conv1.weight.grad[0][0])
-            logger.info(torch.sum(model.layers[4].conv1.weight.grad, dim=[0,1]))
-            logger.info("="*50)
-            logger.info("Layer 2 Weight")
-            # logger.info(model.layers[6].conv1.weight[0][0])
-            logger.info(torch.sum(model.layers[6].conv1.weight, dim=[0,1]))
-            logger.info("Layer 2 Gradient")
-            # logger.info(model.layers[6].conv1.weight.grad[0][0])
-            logger.info(torch.sum(model.layers[6].conv1.weight.grad, dim=[0,1]))
-            logger.info("="*50)
-            logger.info("Layer 3 Weight")
-            # logger.info(model.layers[8].conv1.weight[0][0])
-            logger.info(torch.sum(model.layers[8].conv1.weight, dim=[0,1]))
-            logger.info("Layer 3 Gradient")
-            # logger.info(model.layers[8].conv1.weight.grad[0][0])
-            logger.info(torch.sum(model.layers[8].conv1.weight.grad, dim=[0,1]))
-            logger.info("*"*100)
 
         # print(model.layers[4].conv1.weight[0][0])
         print(f'Epochs : {epoch+1}, Accuracy : {acc}')
@@ -716,16 +633,6 @@ def train_model(model, train_loader, test_loader):
         
         scheduler.step()
 
-        # result_list['train_acc'].append(acc)
-        
-        # data_frame = pd.DataFrame(data=result_list, index=range(0, epoch + 1))
-        # if args.wb == 1 :
-        #     csv_name = './log/resnet20/cifar10/scale1_1bit/%s_%s_%.4f_%d_%d_wb%d_ab%d_%.2f_256x256.csv'%(args.model, name, args.lr, args.epoch, args.seed, args.wb, args.ab, args.th)
-        # elif args.wb == 2 :
-        #     csv_name = './log/resnet20/cifar10/scale1_2bit/%s_%s_%.4f_%d_%d_wb%d_ab%d_%.2f_256x256.csv'%(args.model, name, args.lr, args.epoch, args.seed, args.wb, args.ab, args.th)
-        # else :
-        #     csv_name = './log/resnet20/cifar10/scale1_4bit/%s_%s_%.4f_%d_%d_wb%d_ab%d_%.2f_256x256.csv'%(args.model, name, args.lr, args.epoch, args.seed, args.wb, args.ab, args.th)
-        # data_frame.to_csv(csv_name, index_label='epoch')        
 
         if acc > best_acc :
             best_acc = acc
@@ -764,9 +671,6 @@ def main():
 
 
     train_model(model, train_loader, test_loader)
-
-    # input = torch.randn(1, 3, 32, 32).cuda()
-    # flops, params = profile(model, inputs=(input,))
 
 
 if __name__=='__main__':
