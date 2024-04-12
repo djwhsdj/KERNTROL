@@ -50,23 +50,9 @@ args = parser.parse_args()
 print(args)
 
 GPU_NUM = args.GPU # GPU
-# device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
-# torch.cuda.set_device(device) # change allocation of current GPU
-# print ('Current cuda device ', torch.cuda.current_device()) # check
 m_bit = args.wb
 real_ac = int(args.ac/args.wb * m_bit)
 
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  # Arrange GPU devices starting from 0
-# os.environ["CUDA_VISIBLE_DEVICES"]= str(GPU_NUM)  # Set the GPU 2 to use
-# device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
-# print ('Current cuda device ', device)
-
-# if args.GPU == 0 :  
-#     os.environ['CUDA_VISIBLE_DEVICES']='MIG-ffeb7d21-314a-5375-9837-8d1bb9f18872'
-# elif args.GPU == 1:
-#     os.environ['CUDA_VISIBLE_DEVICES']='MIG-d064e803-fa01-50f8-b10a-bcda0f02b03c'
-# elif args.GPU == 2:
-#     os.environ['CUDA_VISIBLE_DEVICES']='MIG-ae73c3ad-1cef-56bd-ab31-3bf18c0f8e62'
 
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  # Arrange GPU devices starting from 0
@@ -76,8 +62,6 @@ print ('Current cuda device ', device)
 
 
 
-# ranint = random.randint(0, 10000000)
-## seed 1992일 때, 우리의 방법이 제일 좋음
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
@@ -127,11 +111,8 @@ class BasicBlock_Q__(nn.Module):
         self.a_bit = a_bit
         self.act1 = Activate(self.a_bit)
         self.act2 = Activate(self.a_bit)
-        # self.act1 = nn.ReLU()
-        # self.act2 = nn.ReLU()
 
         global image_col, image_row
-        # if args.dataset == 'ResNet_Q':
         if in_planes == 16:
             image_col, image_row = 32, 32
         elif in_planes == 32:
@@ -192,7 +173,6 @@ class ResNet20_Q__(nn.Module):
             *self._make_layer(block, 64, num_blocks[2], stride=2),
         )
 
-        # mask_prune(self.layers)
         self.fc = nn.Linear(64, num_classes) 
 
     def _make_layer(self, block, planes, num_blocks, stride):
@@ -376,11 +356,8 @@ class BasicBlock_Q(nn.Module):
         self.a_bit = a_bit
         self.act1 = Activate(self.a_bit)
         self.act2 = Activate(self.a_bit)
-        # self.act1 = nn.ReLU()
-        # self.act2 = nn.ReLU()
 
         global image_col, image_row
-        # if args.dataset == 'ResNet_Q':
         if in_planes == 16:
             image_col, image_row = 32, 32
         elif in_planes == 32:
@@ -771,37 +748,10 @@ def train_model(model, train_loader, test_loader):
             loss_sum += loss.item()
         
         
-        # scheduler.step()
         loss_sum = loss_sum / cnt
         model.eval()
         acc = eval(model, test_loader)
-        # print(model.layers)
-        if epoch % 20 == 0:
-            logger.info("*"*100)
-            logger.info("Epoch %d/%d"%(epoch, args.epoch))
-            logger.info("Layer 1 Weight")
-            # logger.info(model.layers[4].conv1.weight[0][0])
-            logger.info(torch.sum(model.layers[4].conv1.weight, dim=[0,1]))
-            logger.info("Layer 1 Gradient")
-            # logger.info(model.layers[4].conv1.weight.grad[0][0])
-            logger.info(torch.sum(model.layers[4].conv1.weight.grad, dim=[0,1]))
-            logger.info("="*50)
-            logger.info("Layer 2 Weight")
-            # logger.info(model.layers[6].conv1.weight[0][0])
-            logger.info(torch.sum(model.layers[6].conv1.weight, dim=[0,1]))
-            logger.info("Layer 2 Gradient")
-            # logger.info(model.layers[6].conv1.weight.grad[0][0])
-            logger.info(torch.sum(model.layers[6].conv1.weight.grad, dim=[0,1]))
-            logger.info("="*50)
-            logger.info("Layer 3 Weight")
-            # logger.info(model.layers[8].conv1.weight[0][0])
-            logger.info(torch.sum(model.layers[8].conv1.weight, dim=[0,1]))
-            logger.info("Layer 3 Gradient")
-            # logger.info(model.layers[8].conv1.weight.grad[0][0])
-            logger.info(torch.sum(model.layers[8].conv1.weight.grad, dim=[0,1]))
-            logger.info("*"*100)
 
-        # print(model.layers[4].conv1.weight[0][0])
         print(f'Epochs : {epoch+1}, Accuracy : {acc}')
         logger.info("Epoch %d/%d, Acc=%.4f"%(epoch+1, args.epoch, acc))
         
@@ -830,9 +780,6 @@ def main():
             model = ResNet20_Q(args.ab, args.wb, block=BasicBlock_Q, num_blocks=[3,3,3], scale=1, num_classes=10).cuda()
 
     train_model(model, train_loader, test_loader)
-
-    # input = torch.randn(1, 3, 32, 32).cuda()
-    # flops, params = profile(model, inputs=(input,))
 
 
 if __name__=='__main__':
